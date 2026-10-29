@@ -1,15 +1,15 @@
-# Evaluation Report — AI Investigation Engine
+# შეფასების ანგარიში (Evaluation Report) — AI Investigation Engine
 
-## 1. Evaluation Methodology
-We built an automated evaluation suite (`scripts/evaluate.py`) comprising **42 test questions** across four distinct categories:
-- **Simple Single-Document Questions (14)**: Direct technical lookups (versions, timeouts, error codes).
-- **Multi-Hop Cross-Document Questions (12)**: Questions requiring connecting 2–3 documents (e.g., matching a changelog release to an incident post-mortem and architecture spec).
-- **Contradiction Detection Questions (8)**: Queries targeting conflicting reports (e.g., SRE audit vs external vendor memo on Redis packet loss; Kafka disk saturation vs FinOps S3 claim).
-- **Unanswerable / Out-of-Scope Questions (8)**: Queries with no supporting evidence in the corpus to verify abstention and hallucination prevention.
+## 1. შეფასების მეთოდოლოგია
+ავტომატიზებული შეფასების სისტემა () მოიცავს **42 სატესტო კითხვას**, რომლებიც დაყოფილია 4 კატეგორიად:
+- **მარტივი კითხვები (14 კითხვა)**: კონკრეტული ფაქტების, ვერსიების, თარიღებისა და შეცდომის კოდების მოძიება ერთი დოკუმენტიდან.
+- **მრავალსაფეხურიანი / Multi-Hop კითხვები (12 კითხვა)**: მოითხოვს 2–3 სხვადასხვა დოკუმენტის (მაგ. Changelog + Incident Post-mortem + Architecture Spec) დაკავშირებას.
+- **ურთიერთგამომრიცხავი ინფორმაციის კითხვები (8 კითხვა)**: ამოწმებს სისტემის უნარს, აღმოაჩინოს წინააღმდეგობა სხვადასხვა წყაროს შორის (მაგ. შიდა SRE აუდიტი გარე ვენდორის მემოს წინააღმდეგ).
+- **უპასუხო / კონტექსტს მიღმა კითხვები (8 კითხვა)**: ამოწმებს, იკავებს თუ არა სისტემა თავს პასუხისგან, როცა ბაზაში მტკიცებულება არ არსებობს.
 
-## 2. Quantitative Comparison of Two Configurations
+## 2. ორი კონფიგურაციის რაოდენობრივი შედარება
 
-| Metric | Config A: Fixed Chunking + Semantic Only | Config B: Structure Chunking + Hybrid (Semantic + BM25 + Custom Ranker) | Delta (Improvement) |
+| მეტრიკა | Config A (Fixed + Semantic) | Config B (Structure + Hybrid RRF) | გაუმჯობესება |
 | :--- | :---: | :---: | :---: |
 | **Recall@5** | 0.9706 | **1.0** | +0.0294 |
 | **MRR (Mean Reciprocal Rank)** | 0.9162 | **0.9706** | +0.0544 |
@@ -18,16 +18,12 @@ We built an automated evaluation suite (`scripts/evaluate.py`) comprising **42 t
 | **Contradiction Detection Rate** | 1.0 | **1.0** | +0.0 |
 | **Abstention Accuracy (Unanswerable)** | 0.875 | **0.875** | +0.0 |
 
-## 3. Error Analysis: Where the System Fails, Why, and How to Improve
+## 3. შედეგების ანალიზი: სად ცდება სისტემა, რატომ და როგორ შეიძლება გაუმჯობესება
 
-### Where Config A (Semantic Only + Fixed Window) Fails:
-1. **Exact Identifier & Version Misses**: Pure dense embeddings (`BAAI/bge-small-en-v1.5`) occasionally rank general incident descriptions above exact version/ticket identifiers like `CHG-884`, `v1.11.3`, or `800ms`.
-2. **Multi-Hop Recall Drops**: When a question asks about both a date (`2025-03-14`) and downstream architectural impact, semantic-only search retrieves the primary incident report at Rank 1 but sometimes pushes the secondary changelog or architecture spec below Rank 3.
-
-### Why Config B (Structure Chunking + Hybrid RRF + Custom Ranker) Performs Better:
-- Combining **BM25 lexical scores** with **Semantic cosine similarity** via our custom **Weighted Reciprocal Rank Fusion (RRF)** and **Numeric/Title Boost** ensures exact ticket IDs (`INC-309`, `CHG-884`) and dates surface in the top results.
-- Multi-step query decomposition splits compound questions into focused sub-queries, improving multi-document `Recall@5` and `Citation Accuracy`.
-
-### Remaining Limitations & Future Improvements:
-- **Subtle Semantic Contradictions**: Our rule + numeric conflict detector catches explicit status inversions (`healthy` vs `outage`) and numeric discrepancies (`0%` vs `42%`), but subtle logical contradictions phrased without contrasting terms require an NLI (Natural Language Inference) cross-encoder model.
-- **Cross-Encoder Re-ranking**: Adding a lightweight cross-encoder (`bge-reranker-base`) on top of the Top-20 hybrid candidates would further improve `MRR` on 3-hop queries.
+- **რატომ აჯობა Config B-მ (Structure Chunking + Hybrid RRF) Config A-ს**:
+  სუფთა ვექტორული ძიება (Semantic Only) ხშირად კარგავს ზუსტ ტექნიკურ კოდებს (, , ). ჩვენი ხელნაწერი რანჟირების ალგორითმი () აერთიანებს BM25-სა და სემანტიკურ ძიებას RRF ფორმულით და ამატებს რიცხვითი/სათაურის დამთხვევის ბონუსს, რამაც  აიყვანა -მდე, ხოლო  — -მდე.
+- **სად შეიძლება სისტემა შეცდეს (შეზღუდვები)**:
+  1. თუ ორ დოკუმენტს შორის წინააღმდეგობა გადმოცემულია ირიბი, სემანტიკურად რთული ფორმულირებით (საპირისპირო საკვანძო სიტყვებისა და განსხვავებული რიცხვების გარეშე), წესებზე დაფუძნებულმა დეტექტორმა შეიძლება ვერ დააფიქსიროს კონფლიქტი.
+  2. ძალიან გრძელ (4+ ნაბიჯიან) კითხვებზე მარტივი სინტაქსური დაშლა () ნაკლებად ეფექტურია, ვიდრე LLM-ით გენერირებული ქვე-კითხვები.
+- **როგორ შეიძლება გაუმჯობესება**:
+  Cross-Encoder Re-ranker მოდელის () დამატება Top-20 შედეგის გადასახარისხებლად და NLI (Natural Language Inference) მოდელის გამოყენება ფარული ლოგიკური წინააღმდეგობების აღმოსაჩენად.
