@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+qdrant-client
+rank-bm25
+google-genai
+pypdf
+datasets
+python-dotenv
+python-multipart
+pytest
+requests

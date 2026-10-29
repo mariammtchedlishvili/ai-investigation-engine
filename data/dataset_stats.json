@@ -1,0 +1,10 @@
+{
+  "dataset_source": "hotpotqa/hotpot_qa + danluu-style post-mortems",
+  "total_records_processed": 50500,
+  "unique_records_after_dedup": 46749,
+  "duplicates_removed": 3751,
+  "processing_time_sec": 4.95,
+  "reproducible_seed": 42,
+  "indexed_subset_documents": 261,
+  "indexed_vector_chunks": 273
+}

@@ -1,0 +1,26 @@
+{
+  "config_a": {
+    "config_name": "Config A: Fixed Chunking + Semantic Only",
+    "chunk_strategy": "fixed",
+    "search_mode": "semantic",
+    "total_questions": 42,
+    "recall_at_k": 0.9706,
+    "mrr": 0.9162,
+    "answer_correctness": 0.8929,
+    "citation_accuracy": 0.9524,
+    "contradiction_detection_rate": 1.0,
+    "abstention_accuracy": 0.875
+  },
+  "config_b": {
+    "config_name": "Config B: Structure Chunking + Hybrid (Semantic + BM25 + Custom Ranker)",
+    "chunk_strategy": "structure",
+    "search_mode": "hybrid",
+    "total_questions": 42,
+    "recall_at_k": 1.0,
+    "mrr": 0.9706,
+    "answer_correctness": 0.9048,
+    "citation_accuracy": 0.9762,
+    "contradiction_detection_rate": 1.0,
+    "abstention_accuracy": 0.875
+  }
+}
