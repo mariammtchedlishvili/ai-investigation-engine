@@ -12,4 +12,4 @@ RUN mkdir -p data/qdrant_storage && chmod -R 777 data
 
 EXPOSE 7860
 
-CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn app.api:app --host 0.0.0.0 --port ${PORT:-7860}"]
